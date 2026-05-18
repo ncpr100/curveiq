@@ -12,3 +12,6 @@
 
 ### Notes
 - Existing root-level and `src/` bridge duplication remains and is now documented as technical debt.
+
+### Fixed
+- Fixed Tailwind utility generation by correcting source scan paths in `styles.css` (`@source ./src`, `@source ./*.ts`, `@source ./*.tsx`) so root-bridge UI files are included and premium layout classes render correctly.
