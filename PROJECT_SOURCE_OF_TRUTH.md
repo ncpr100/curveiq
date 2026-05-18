@@ -21,6 +21,7 @@ Current policy:
 Migration status:
 - Route and API implementations are canonical in `src/routes/index.tsx` and `src/routes/api/curveiq/score.ts`.
 - Root files `index.tsx` and `score.ts` are now wrappers that re-export the canonical src routes.
+- Root files `router.tsx`, `start.ts`, and `server.ts` are wrappers that re-export canonical src entries.
 
 ## Naming and Style
 - Keep file names kebab-case or existing project pattern.
@@ -41,4 +42,4 @@ Migration status:
 - `README (1).md`
 - `breadcrumb (1).tsx`
 - `utils (1).ts`
-- Remaining root-level wrappers (`router.tsx`, `start.ts`, `server.ts`) to be removed in later migration phases
+- Root-level wrappers remain intentionally for compatibility; do not duplicate logic into root files

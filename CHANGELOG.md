@@ -20,3 +20,5 @@
 - Completed non-destructive migration phase for route duplication:
   - Canonicalized implementations in `src/routes/index.tsx` and `src/routes/api/curveiq/score.ts`.
   - Converted root files `index.tsx` and `score.ts` into compatibility wrappers that re-export canonical src routes.
+- Completed non-destructive migration phase for runtime entry duplication:
+  - Converted root files `router.tsx`, `start.ts`, and `server.ts` into compatibility wrappers that re-export canonical src entries.
