@@ -1,0 +1,1 @@
+export { SilhouetteFigure } from "../../../SilhouetteFigure";
