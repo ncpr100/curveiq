@@ -15,3 +15,8 @@
 
 ### Fixed
 - Fixed Tailwind utility generation by correcting source scan paths in `styles.css` (`@source ./src`, `@source ./*.ts`, `@source ./*.tsx`) so root-bridge UI files are included and premium layout classes render correctly.
+
+### Changed
+- Completed non-destructive migration phase for route duplication:
+  - Canonicalized implementations in `src/routes/index.tsx` and `src/routes/api/curveiq/score.ts`.
+  - Converted root files `index.tsx` and `score.ts` into compatibility wrappers that re-export canonical src routes.
