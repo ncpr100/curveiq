@@ -89,6 +89,40 @@ describe("POST /api/curveiq/score", () => {
     expect(json.sub_scores).toBeTypeOf("object");
   });
 
+  it("incluye explainability y metadata de modelo en respuesta single", async () => {
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        archetype_id: "classic_feminine",
+        tolerance_sd: 3,
+        metrics: VALID_METRICS,
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as {
+      mode: string;
+      model_version: string;
+      explanations: Record<
+        string,
+        {
+          status: string;
+          ideal_range: [number, number];
+          plausible_range: [number, number];
+        }
+      >;
+      risk_flags: Array<{ metric: string; reason: string; severity: string }>;
+    };
+
+    expect(json.mode).toBe("single");
+    expect(typeof json.model_version).toBe("string");
+    expect(json.model_version.length).toBeGreaterThan(0);
+    expect(json.explanations).toHaveProperty("waist_hip_ratio");
+    expect(["ideal", "plausible"]).toContain(json.explanations.waist_hip_ratio.status);
+    expect(Array.isArray(json.risk_flags)).toBe(true);
+  });
+
   it("retorna 422 cuando archetype_id no existe en ARCHETYPES", async () => {
     const res = await fetch(ENDPOINT, {
       method: "POST",
@@ -222,5 +256,50 @@ describe("POST /api/curveiq/score", () => {
         (d) => d.type === "extra_forbidden" && d.loc.includes("foo"),
       ),
     ).toBe(true);
+  });
+
+  it("procesa escenarios batch y devuelve ranking + recomendación", async () => {
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        archetype_id: "classic_feminine",
+        tolerance_sd: 3,
+        recommend: true,
+        scenarios: [
+          {
+            id: "baseline",
+            metrics: VALID_METRICS,
+          },
+          {
+            id: "optimized",
+            metrics: {
+              ...VALID_METRICS,
+              waist_hip_ratio: 0.69,
+              bust_waist_ratio: 1.38,
+              gluteal_projection_cm: 7,
+            },
+          },
+        ],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as {
+      ok: boolean;
+      mode: string;
+      scenarios: Array<{ id: string; chi: number; explanations: Record<string, unknown> }>;
+      ranking: Array<{ id: string; chi: number }>;
+      recommendation: { best_chi: string | null; best_balanced: string | null };
+    };
+
+    expect(json.ok).toBe(true);
+    expect(json.mode).toBe("recommend");
+    expect(json.scenarios).toHaveLength(2);
+    expect(json.scenarios[0]).toHaveProperty("explanations");
+    expect(json.ranking).toHaveLength(2);
+    expect(json.ranking[0].chi).toBeGreaterThanOrEqual(json.ranking[1].chi);
+    expect(json.recommendation.best_chi).not.toBeNull();
+    expect(json.recommendation.best_balanced).not.toBeNull();
   });
 });

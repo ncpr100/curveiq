@@ -17,6 +17,13 @@ import { SilhouetteFigure } from "@/components/curveiq/SilhouetteFigure";
 import { MetricsForm } from "@/components/curveiq/MetricsForm";
 import type { PatientMetrics } from "@/lib/curveiq-data";
 
+interface ScenarioSnapshot {
+  id: "A" | "B";
+  chi: number;
+  subScores: Record<string, number>;
+  metrics: PatientMetrics;
+}
+
 export const Route = createFileRoute("/")({
   component: CurveIQDashboard,
 });
@@ -27,6 +34,8 @@ function CurveIQDashboard() {
   const [procValues, setProcValues] = useState<Record<string, number>>(
     Object.fromEntries(PROCEDURES.map((p) => [p.id, p.default])),
   );
+  const [scenarioA, setScenarioA] = useState<ScenarioSnapshot | null>(null);
+  const [scenarioB, setScenarioB] = useState<ScenarioSnapshot | null>(null);
 
   const archetype = ARCHETYPES.find((a) => a.id === archetypeId)!;
 
@@ -37,6 +46,22 @@ function CurveIQDashboard() {
   const totalProcs = Object.values(procValues).reduce((a, b) => a + b, 0);
   const isSimulating = totalProcs > 0;
   const delta = projected.chi - baseline.chi;
+  const activeStep = isSimulating ? 2 : 1;
+  const hasComparisons = scenarioA != null || scenarioB != null;
+
+  const saveScenario = (slot: "A" | "B") => {
+    const snapshot: ScenarioSnapshot = {
+      id: slot,
+      chi: projected.chi,
+      subScores: projected.subScores,
+      metrics: projectedMetrics,
+    };
+    if (slot === "A") {
+      setScenarioA(snapshot);
+      return;
+    }
+    setScenarioB(snapshot);
+  };
 
   const resetSim = () =>
     setProcValues(Object.fromEntries(PROCEDURES.map((p) => [p.id, p.default])));
@@ -102,6 +127,35 @@ function CurveIQDashboard() {
                 </button>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="mb-6 rounded-2xl border border-border bg-card/80 px-4 py-3 shadow-[var(--shadow-soft)]">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Flujo Clínico Guiado
+            </h3>
+            <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+              Paso {activeStep} de 3
+            </span>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {[
+              { step: 1, label: "Medir", done: true },
+              { step: 2, label: "Simular", done: isSimulating },
+              { step: 3, label: "Decidir", done: hasComparisons },
+            ].map((item) => (
+              <div
+                key={item.step}
+                className={`rounded-xl border px-3 py-2 text-xs transition ${
+                  item.done
+                    ? "border-[oklch(0.72_0.09_140)] bg-[oklch(0.94_0.03_140/0.4)] text-foreground"
+                    : "border-border bg-secondary/50 text-muted-foreground"
+                }`}
+              >
+                <p className="font-semibold">{item.step}. {item.label}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -217,6 +271,21 @@ function CurveIQDashboard() {
                 })}
               </div>
 
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => saveScenario("A")}
+                  className="rounded-full border border-border bg-secondary px-3 py-1.5 text-[11px] font-medium text-foreground transition hover:bg-muted"
+                >
+                  Guardar Escenario A
+                </button>
+                <button
+                  onClick={() => saveScenario("B")}
+                  className="rounded-full border border-border bg-secondary px-3 py-1.5 text-[11px] font-medium text-foreground transition hover:bg-muted"
+                >
+                  Guardar Escenario B
+                </button>
+              </div>
+
               <div className="mt-auto pt-6">
                 <div className="rounded-2xl bg-[var(--gradient-luxe)] p-4 text-[var(--ivory)]">
                   <div className="flex items-baseline justify-between">
@@ -237,6 +306,53 @@ function CurveIQDashboard() {
                     <span className="text-xs opacity-60">/ 100</span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="lg:col-span-12">
+            <div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">Comparador de Escenarios</h3>
+                <button
+                  onClick={() => {
+                    setScenarioA(null);
+                    setScenarioB(null);
+                  }}
+                  disabled={!hasComparisons}
+                  className="text-[11px] font-medium text-muted-foreground transition hover:text-foreground disabled:opacity-40"
+                >
+                  Limpiar comparación
+                </button>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                {[
+                  { title: "Base", snapshot: { chi: baseline.chi, subScores: baseline.subScores } },
+                  { title: "Escenario A", snapshot: scenarioA },
+                  { title: "Escenario B", snapshot: scenarioB },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-2xl border border-border bg-secondary/40 p-4">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{item.title}</p>
+                    <p className="mt-1 text-2xl font-serif text-foreground">
+                      {item.snapshot ? item.snapshot.chi.toFixed(1) : "—"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">CHI</p>
+                    <div className="mt-3 space-y-1">
+                      {Object.entries(GROUPS).map(([k, g]) => {
+                        const value = item.snapshot?.subScores[k];
+                        return (
+                          <div key={k} className="flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">{g.label}</span>
+                            <span className="tabular-nums text-foreground">
+                              {value != null ? value.toFixed(0) : "—"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </section>
