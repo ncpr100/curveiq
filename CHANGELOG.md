@@ -22,3 +22,9 @@
   - Converted root files `index.tsx` and `score.ts` into compatibility wrappers that re-export canonical src routes.
 - Completed non-destructive migration phase for runtime entry duplication:
   - Converted root files `router.tsx`, `start.ts`, and `server.ts` into compatibility wrappers that re-export canonical src entries.
+
+### Added
+- Added execution control folder `next-steps/` with mandatory planning and completion artifacts:
+  - `next-steps/README.md`
+  - `next-steps/ROADMAP-MASTER.md`
+  - `next-steps/IMPROVEMENTS-BACKLOG.md`

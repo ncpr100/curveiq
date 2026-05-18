@@ -38,6 +38,11 @@ Migration status:
 - Every API contract change requires integration coverage in `curveiq-score.integration.test.ts`.
 - Build (`npm run build`) and integration test pass are required before commit.
 
+## Execution Control
+- Roadmap and execution tracking must be maintained under `next-steps/`.
+- `next-steps/ROADMAP-MASTER.md` is the ordered phase plan.
+- `next-steps/IMPROVEMENTS-BACKLOG.md` is the completion checklist and task status source.
+
 ## Duplicate/Conflict Watchlist
 - `README (1).md`
 - `breadcrumb (1).tsx`
